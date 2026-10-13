@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HAIRLINE — Type Defense</title>
+<meta name="description" content="A stick-figure typing shooter drawn in the hairline illustration style. Every correct letter is a bullet. Every miss fires back." />
+<link rel="stylesheet" href="styles.css?v=7" />
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#" aria-label="Hairline Type Defense — home">
+      <!-- tiny hairline stick hero -->
+      <svg class="brand-mark" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+        <circle cx="14" cy="10" r="5"/>
+        <path d="M14 15v11M14 19l10-3 8 1M14 26l-6 10M14 26l7 9M24 16l14-2M34 12v4M38 14h4"/>
+      </svg>
+      <span class="brand-word">HAIRLINE</span>
+      <span class="brand-sep">/</span>
+      <span class="brand-sub">TYPE&nbsp;DEFENSE</span>
+    </a>
+    <nav class="top-actions" aria-label="Game controls">
+      <button id="btnHelp" class="tool tool-help" type="button" title="Instructions &amp; help" aria-haspopup="dialog" aria-expanded="false">? HELP</button>
+      <button id="btnSound" class="tool" type="button" title="Sound is ON — click to mute" aria-pressed="true">♪ SOUND: ON</button>
+      <button id="btnTheme" class="tool" type="button" title="Switch to dark mode" aria-pressed="false">☾ DARK MODE</button>
+      <button id="btnPause" class="tool" type="button" title="Pause (Esc)" disabled>Ⅱ PAUSE</button>
+      <button id="btnRestart" class="tool" type="button" title="Restart run">↻ RESTART</button>
+    </nav>
+  </header>
+
+  <main class="shell">
+    <!-- ── HUD ─────────────────────────────────────────── -->
+    <section class="hud" aria-label="Game status">
+      <div class="hud-cell hud-hero">
+        <span class="cap">Hero · HP</span>
+        <div class="hp-row">
+          <div class="hp-track" role="progressbar" aria-label="Hero health" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" id="hpBarWrap">
+            <div class="hp-fill" id="hpFill"></div>
+          </div>
+          <b class="mono" id="hpText">100</b>
+        </div>
+        <span class="shield-status mono" id="shieldStatus">◇ SHIELD OFF · clean words 0/2</span>
+      </div>
+      <div class="hud-cell"><span class="cap">Score</span><b class="mono hud-num" id="hudScore">0</b></div>
+      <div class="hud-cell"><span class="cap">Wave</span><b class="mono hud-num" id="hudWave">—</b></div>
+      <div class="hud-cell"><span class="cap">Down</span><b class="mono hud-num" id="hudKills">0</b></div>
+      <div class="hud-cell"><span class="cap">Accuracy</span><b class="mono hud-num" id="hudAcc">100%</b></div>
+      <div class="hud-cell"><span class="cap">Speed</span><b class="mono hud-num"><span id="hudWpm">0</span><small> wpm</small></b></div>
+      <div class="hud-cell hud-streak"><span class="cap">Streak</span><b class="mono hud-num" id="hudStreak">×0</b></div>
+    </section>
+
+    <!-- ── STAGE ───────────────────────────────────────── -->
+    <section class="stage-wrap">
+      <div class="stage-head">
+        <span class="cap">Fig. 01 — The firing line</span>
+        <span class="cap dim" id="stageReadout">rest</span>
+      </div>
+
+      <div class="stage" id="stage">
+        <canvas id="game" width="960" height="420" aria-label="Battlefield: a stick-figure hero on the left shooting typed letters at stick-figure enemies approaching from the right."></canvas>
+
+        <div class="wave-banner" id="waveBanner" hidden>WAVE 1</div>
+        <div class="hit-vignette" id="hitVignette" aria-hidden="true"></div>
+
+        <!-- MENU -->
+        <div class="overlay" id="menuOverlay">
+          <div class="overlay-card">
+            <p class="cap accent-cap">A typing shooter · drawn with hairlines</p>
+            <h1>TYPE<br/>DEFENSE</h1>
+            <p class="lede">Enemies march in from the right, each carrying a word over its head.
+               <strong>Type the word</strong> — every correct letter is a bullet from the hero's rifle.
+               Finish the word and the enemy falls. <strong>Type a wrong letter and that enemy fires back.</strong></p>
+            <div class="rules-mini">
+              <div><span class="rule-glyph ok">a →</span><span>correct letter — hero fires</span></div>
+              <div><span class="rule-glyph bad">a ✕</span><span>wrong letter — the enemy fires back</span></div>
+            </div>
+            <button class="cta" id="btnStart" type="button">▶ &nbsp;START — then just type</button>
+            <p class="fine">Full instructions live under <em>? HELP</em> in the top bar.</p>
+          </div>
+        </div>
+
+        <!-- PAUSE -->
+        <div class="overlay" id="pauseOverlay" hidden>
+          <div class="overlay-card small">
+            <p class="cap accent-cap">Held</p>
+            <h2>PAUSED</h2>
+            <p class="lede">The line is holding. Breathe.</p>
+            <button class="cta" id="btnResume" type="button">▶ &nbsp;RESUME</button>
+            <p class="fine"><kbd>Esc</kbd> also resumes</p>
+          </div>
+        </div>
+
+        <!-- GAME OVER -->
+        <div class="overlay" id="overOverlay" hidden>
+          <div class="overlay-card small">
+            <p class="cap accent-cap">The hero is down</p>
+            <h2>GAME OVER</h2>
+            <div class="final-stats" id="finalStats"></div>
+            <button class="cta" id="btnAgain" type="button">↻ &nbsp;PLAY AGAIN</button>
+            <p class="fine"><kbd>Enter</kbd> also restarts</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── TYPING CONSOLE ─────────────────────────────── -->
+      <div class="console" id="consoleBar">
+        <div class="console-target">
+          <span class="cap">Target</span>
+          <div class="target-word mono" id="targetWord" aria-live="polite"><span class="tw-empty">— waiting for the next word —</span></div>
+        </div>
+        <div class="console-feedback mono" id="feedback" aria-live="polite">press START, then type straight through the current word</div>
+        <button class="tool console-key" id="btnKeyboard" type="button" title="Open the touch / on-screen keyboard">⌨ TYPE HERE</button>
+        <input id="mobileInput" class="mobile-input" type="text" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" aria-label="Type here" />
+      </div>
+    </section>
+  </main>
+
+  <!-- ── HELP / INSTRUCTIONS (hidden until the ? HELP tab) ── -->
+  <div class="help-backdrop" id="helpBackdrop" hidden></div>
+  <aside class="help-panel" id="helpPanel" role="dialog" aria-modal="true" aria-labelledby="helpTitle" hidden>
+    <div class="help-head">
+      <div>
+        <span class="cap">Hairline · Type Defense</span>
+        <h2 id="helpTitle">How to play</h2>
+      </div>
+      <button class="tool" id="btnHelpClose" type="button" title="Close help (Esc)">✕ CLOSE</button>
+    </div>
+
+    <div class="help-body">
+      <section>
+        <span class="cap">01 · Type to fire</span>
+        <svg class="card-fig" viewBox="0 0 220 84" fill="none" aria-hidden="true">
+          <circle cx="34" cy="22" r="8"/><path d="M34 30v20M34 36l16-5 22 1M34 50l-10 22M34 50l12 20M50 31l34-4M84 26l6 0M96 25h44" stroke-dasharray="2 5"/>
+          <g class="fig-word"><rect x="146" y="4" width="66" height="22"/><text x="154" y="19">code</text></g>
+          <circle cx="196" cy="30" r="8"/><path d="M196 38v18M196 44l-14-3M196 56l-8 18M196 56l9 17"/>
+        </svg>
+        <p>The <b>current word</b> is always in the TARGET box under the battlefield (normally the nearest enemy's; at the start of a word, typing another enemy's first letter makes that word current instead). Its bubble sits on top of the others, with a dashed sight-line and a ring under its feet. Type straight through it: the next letter is always <span class="help-cur">underlined</span>, every correct letter fires, and the letter rides the bullet, hits, and greys out. When every letter position has been entered, the enemy falls and the next word comes up.</p>
+      </section>
+
+      <section>
+        <span class="cap">02 · A miss fires back</span>
+        <svg class="card-fig" viewBox="0 0 220 84" fill="none" aria-hidden="true">
+          <circle cx="34" cy="22" r="8"/><path d="M34 30v20M34 36l14-4M34 50l-10 22M34 50l12 20"/>
+          <circle cx="186" cy="26" r="8"/><path d="M186 34v20M186 40l-18-4-24 1M186 54l-9 20M186 54l10 19M144 36H84" stroke-dasharray="2 5"/>
+          <text x="92" y="26" class="fig-x">✕</text>
+        </svg>
+        <p>A <b>wrong letter never halts you</b> — including the very first letter of a word. It is marked red, the enemy fires back (hero −<b>8 HP</b> when the shot lands, streak reset) — and the word simply moves on to the next letter. Example: for <span class="mono">apple</span>, typing <span class="mono">appel</span> scores <span class="mono">app</span> as three hits and the last two keys as two misses, and the word is finished. There is no backspace; every letter key counts and moves you forward.</p>
+      </section>
+
+      <section>
+        <span class="cap">03 · Kills, the line &amp; waves</span>
+        <p>An enemy's health <em>is</em> its word: one hit per letter, and it falls on the last one. Score is 10 per letter (with a streak multiplier every 12 in a row) plus a completion bonus. An enemy that reaches <b>THE LINE</b> stops there and keeps shooting the hero. Every 8 kills starts a new wave: faster walkers, faster spawns, longer words, more brutes. The run ends when the hero's HP reaches zero.</p>
+        <div class="legend">
+          <div><span class="legend-name">▸ RUNNER</span><span>small &amp; quick · short words</span></div>
+          <div><span class="legend-name">▸ WALKER</span><span>the standard march · mid words</span></div>
+          <div><span class="legend-name">▸ BRUTE</span><span>slow &amp; tall · long words, many hits</span></div>
+        </div>
+      </section>
+
+      <section>
+        <span class="cap">04 · Shield &amp; lines</span>
+        <p>Every word finished <b>with no typo</b> also heals the hero <b>+2 HP</b> (up to 100). Type <b>two of those in a row</b> and a <b>shield</b> rises around the hero (watch the HUD under his HP). While it is up, enemy shots <b>bounce off — no HP lost</b>. It stays until your <b>first typo</b>, which brings it down at once; then you must earn it again with two more clean words.</p>
+        <p>Later on (wave 3) some enemies carry a simple <b>line</b> instead of a word, tagged <span class="mono">— LINE —</span>. Type the whole line: <b>spaces count</b> and are shown as <span class="mono">␣</span>. Line carriers walk slower, but their lines are long.</p>
+      </section>
+
+      <section>
+        <span class="cap">05 · Controls</span>
+        <div class="legend">
+          <div><span class="legend-name">A–Z</span><span>type the target word</span></div>
+          <div><span class="legend-name">ESC</span><span>pause / resume · closes this panel</span></div>
+          <div><span class="legend-name">ENTER</span><span>start · play again</span></div>
+          <div><span class="legend-name">⌨ TYPE HERE</span><span>touch / on-screen keyboard</span></div>
+          <div><span class="legend-name">☾ DARK MODE</span><span>dark / light mode toggle</span></div>
+          <div><span class="legend-name">␣ SPACE</span><span>typed like a letter, inside lines</span></div>
+          <div><span class="legend-name">♪ SOUND: ON/OFF</span><span>synth effects — stays as you set it</span></div>
+        </div>
+      </section>
+
+      <footer class="help-foot">
+        Visual language after <a href="https://github.com/lucasmarkes/hairline" target="_blank" rel="noreferrer">lucasmarkes/hairline</a> — isometric line figures on a plate: <span class="mono">plate · hi · edge · mid · lo</span>, hairline stroke, no fills but the plate.<br/>
+        <span class="mono">v0.1 · core loop</span>
+      </footer>
+    </div>
+  </aside>
+
+<script src="game.js?v=7"></script>
+</body>
+</html>
