@@ -1,4 +1,4 @@
-# HAIRLINE — Type Defense
+# HAIRLINE — Type Arcade
 
 A stick-figure typing shooter drawn in the illustration language of
 [lucasmarkes/hairline](https://github.com/lucasmarkes/hairline) — isometric
