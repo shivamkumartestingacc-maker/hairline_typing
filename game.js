@@ -1,4 +1,4 @@
-/* ── HAIRLINE / TYPE DEFENSE ──────────────────────────────
+/* ── HAIRLINE / TYPE ARCADE ──────────────────────────────
    Core loop (v0.1):
      · enemies walk in from the right, word over each head
      · there is always a current word; every key — the first included —
